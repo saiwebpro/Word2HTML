@@ -41,6 +41,27 @@
             htmlEditor.setValue(sanitizedHtml);
         }
 
+        function sanitizeHtml(html) {
+            // Remove dir="ltr" attribute and empty span, div tags
+            html = html.replace(/<(\/*)(span|div)[^>]*>/gi, '');
+
+            // Replace italicized text with <em> tags
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+            // Replace bold text with <strong> tags
+            html = html.replace(/\[(.*?)\]/g, '<strong>$1</strong>');
+
+            // Add <p> tags to paragraphs
+            html = html.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '').join('');
+
+            // Remove <p> tags inside tables
+            html = html.replace(/<table\b[^>]*>(.*?)<\/table>/gi, function(match) {
+                return match.replace(/<p\b[^>]*>(.*?)<\/p>/gi, '$1');
+            });
+
+            return html;
+        }
+
         function slugify(text) {
             return text.trim().toLowerCase().replace(/[^\w\s\-]/g, '').replace(/\s+/g, '-');
         }
@@ -48,99 +69,6 @@
         function isInternalLink(url) {
             return url.includes('uworld.com') || url.startsWith('/') || url.startsWith('#');
         }
-
-        function sanitizeHtml(html) {
-    // Remove dir="ltr" attribute, empty <p> tags, span tags, inline styles, and div tags
-    html = html.replace(/<(\/*)(span|p|div)[^>]*>/gi, '')  // Remove <span>, <p>, and <div> tags
-               .replace(/ style="[^"]*"/gi, '')
-               .replace(/\sdir="ltr"/gi, '');
-
-    // Remove <colgroup> and <col> tags
-    html = html.replace(/<colgroup>.*?<\/colgroup>/gi, '')
-               .replace(/<col[^>]*>/gi, '');
-
-    // Replace [SIMPLE REDUCED WIDTH TABLE], [SIMPLE FULL-WIDTH TABLE], [SIMPLE HALF WIDTH TABLE]
-    // with corresponding HTML tables while ignoring the tags
-    html = html.replace(/\[SIMPLE REDUCED WIDTH TABLE\]/g, '<table class="custom-table-width-75 responsive-table prominent-header" style="margin-bottom:20px;"><thead><tr><th></th></tr></thead><tbody></tbody></table>')
-               .replace(/\[SIMPLE FULL-WIDTH TABLE\]/g, '<table class="prominent-header responsive-table" style="margin-bottom:20px;"><thead><tr><th></th></tr></thead><tbody></tbody></table>')
-               .replace(/\[SIMPLE HALF WIDTH TABLE\]/g, '<table class="compact table prominent-header responsive-table" style="margin-bottom:20px;"><thead><tr><th></th></tr></thead><tbody></tbody></table>');
-
-    // Replace [H2], [H3], [H4] with the corresponding HTML tags
-    html = html.replace(/\[H2\]/g, '<h2>')
-               .replace(/\[\/H2\]/g, '</h2>')
-               .replace(/\[H3\]/g, '<h3>')
-               .replace(/\[\/H3\]/g, '</h3>')
-               .replace(/\[H4\]/g, '<h4>')
-               .replace(/\[\/H4\]/g, '</h4>');
-
-    // Replace italicized text with <em> tags
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-    // Replace [START QUOTE] hello how are you? [END QUOTE] with <blockquote class="pull-quote">hello how are you?</blockquote>
-    html = html.replace(/\[START QUOTE\]([^[\]]+)\[END QUOTE\]/g, '<blockquote class="pull-quote">$1</blockquote>');
-
-    // Assign IDs to h2 elements based on their content (slugify the text)
-    var doc = new DOMParser().parseFromString(html, 'text/html');
-
-    var headings = doc.querySelectorAll('h2');
-    headings.forEach(function(heading) {
-        var headingText = heading.textContent.trim();
-        var slug = headingText.toLowerCase().replace(/[^\w\s\-]/g, '').replace(/\s+/g, '-');
-        heading.id = slug;
-    });
-
-    // Add class "prominent-header" and "responsive-table" to all tables
-    var tables = doc.querySelectorAll('table');
-    tables.forEach(function(table) {
-        table.classList.add('prominent-header', 'responsive-table');
-        table.style.marginBottom = '20px';
-
-        var rows = table.querySelectorAll('tr');
-        if (rows.length > 0) {
-            var firstRow = rows[0];
-            var cells = firstRow.querySelectorAll('td, th');
-            cells.forEach(function(cell) {
-                if (cell.firstChild && cell.firstChild.nodeName === 'STRONG') {
-                    cell.outerHTML = '<th>' + cell.innerHTML + '</th>';
-                }
-            });
-        }
-
-        // Wrap the first row in <thead> if it's not already wrapped
-        if (!firstRow.parentElement || firstRow.parentElement.nodeName !== 'THEAD') {
-            var thead = document.createElement('thead');
-            table.insertBefore(thead, table.firstChild);
-            thead.appendChild(firstRow);
-        }
-
-        // Replace <td> with <th> inside <thead>
-        var thCells = table.querySelectorAll('thead td');
-        thCells.forEach(function(thCell) {
-            var newTh = document.createElement('th');
-            newTh.innerHTML = thCell.innerHTML;
-            thCell.parentNode.replaceChild(newTh, thCell);
-        });
-
-        // Remove <p> tags inside <th>
-        var thElements = table.querySelectorAll('th');
-        thElements.forEach(function(th) {
-            th.innerHTML = th.innerHTML.replace(/<p[^>]*>/gi, '').replace(/<\/p>/gi, '');
-        });
-    });
-
-    // Update links to open in new tab for external links and set rel attributes based on domain
-    var links = doc.querySelectorAll('a');
-    links.forEach(function(link) {
-        var href = link.getAttribute('href');
-        if (href && !isInternalLink(href)) {
-            link.setAttribute('target', '_blank');
-            link.setAttribute('rel', href.includes('.org') ? 'dofollow' : 'noindex nofollow');
-        }
-    });
-
-    return doc.body.innerHTML;
-}
-
     </script>
 </body>
 </html>
