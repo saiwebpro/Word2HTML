@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Editor</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+h1 {
+    color: #333;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+canvas {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+.buttons-container {
+    margin-bottom: 10px;
+}
+.button {
+    padding: 8px 16px;
+    margin-right: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+<h1>Photo Editor</h1>
+<div class="container">
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <div class="buttons-container">
+        <input type="file" id="imageInput" accept="image/*">
+        <button class="button" onclick="crop()">Crop</button>
+        <button class="button" onclick="scale(0.5)">Scale 0.5x</button>
+        <button class="button" onclick="scale(2)">Scale 2x</button>
+        <button class="button" onclick="rotate(90)">Rotate 90°</button>
+        <button class="button" onclick="applyFilter('grayscale')">Grayscale</button>
+        <button class="button" onclick="applyFilter('sepia')">Sepia</button>
+        <button class="button" onclick="applyFilter('invert')">Invert</button>
+        <button class="button" onclick="reset()">Reset</button>
+    </div>
+    <button class="button" onclick="download()">Download Edited Image</button>
+</div>
+
+<script>
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var image = new Image();
+
+document.getElementById('imageInput').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            image.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+image.onload = function() {
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+};
+
+function crop() {
+    var cropX = parseInt(prompt('Enter crop X position:', 0));
+    var cropY = parseInt(prompt('Enter crop Y position:', 0));
+    var cropWidth = parseInt(prompt('Enter crop width:', canvas.width));
+    var cropHeight = parseInt(prompt('Enter crop height:', canvas.height));
+
+    if (cropX >= 0 && cropY >= 0 && cropWidth > 0 && cropHeight > 0 &&
+        cropX + cropWidth <= canvas.width && cropY + cropHeight <= canvas.height) {
+        var imageData = ctx.getImageData(cropX, cropY, cropWidth, cropHeight);
+        canvas.width = cropWidth;
+        canvas.height = cropHeight;
+        ctx.putImageData(imageData, 0, 0);
+    } else {
+        alert('Invalid crop dimensions.');
+    }
+}
+
+function scale(scaleFactor) {
+    var newWidth = canvas.width * scaleFactor;
+    var newHeight = canvas.height * scaleFactor;
+
+    var tempCanvas = document.createElement('canvas');
+    var tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = newWidth;
+    tempCanvas.height = newHeight;
+    tempCtx.drawImage(canvas, 0, 0, newWidth, newHeight);
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+    ctx.drawImage(tempCanvas, 0, 0, newWidth, newHeight);
+}
+
+function rotate(degrees) {
+    var radians = degrees * Math.PI / 180;
+    var centerX = canvas.width / 2;
+    var centerY = canvas.height / 2;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.translate(centerX, centerY);
+    ctx.rotate(radians);
+    ctx.drawImage(image, -image.width / 2, -image.height / 2);
+    ctx.rotate(-radians);
+    ctx.translate(-centerX, -centerY);
+}
+
+function applyFilter(filter) {
+    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var data = imageData.data;
+
+    for (var i = 0; i < data.length; i += 4) {
+        var red = data[i];
+        var green = data[i + 1];
+        var blue = data[i + 2];
+
+        if (filter === 'grayscale') {
+            var average = (red + green + blue) / 3;
+            data[i] = data[i + 1] = data[i + 2] = average;
+        } else if (filter === 'sepia') {
+            var sepiaRed = 0.393 * red + 0.769 * green + 0.189 * blue;
+            var sepiaGreen = 0.349 * red + 0.686 * green + 0.168 * blue;
+            var sepiaBlue = 0.272 * red + 0.534 * green + 0.131 * blue;
+            data[i] = sepiaRed > 255 ? 255 : sepiaRed;
+            data[i + 1] = sepiaGreen > 255 ? 255 : sepiaGreen;
+            data[i + 2] = sepiaBlue > 255 ? 255 : sepiaBlue;
+        } else if (filter === 'invert') {
+            data[i] = 255 - red;
+            data[i + 1] = 255 - green;
+            data[i + 2] = 255 - blue;
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function reset() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+}
+
+function download() {
+    var downloadLink = document.createElement('a');
+    downloadLink.href = canvas.toDataURL();
+    downloadLink.download = 'edited_image.png';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+</script>
+</body>
+</html>
