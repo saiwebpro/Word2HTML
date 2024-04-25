@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Format Converter</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.input-container {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#dropArea {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+#dropArea.highlight {
+    border-color: #007bff;
+}
+
+.label-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.label-container label {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.output-image {
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+    max-width: 100%;
+}
+</style>
+</head>
+<body>
+<h1>Image Format Converter</h1>
+<div class="container">
+    <div id="dropArea" class="input-container">
+        <p>Drag and drop your image here or click to choose</p>
+        <input type="file" id="imageInput" accept="image/*">
+    </div>
+    <div class="conversion-options" style="display: none;">
+        <label for="formatSelect">Select Conversion Format:</label>
+        <select id="formatSelect">
+            <option value="png">JPG to PNG</option>
+            <option value="jpg">PNG to JPG</option>
+            <option value="webp">PNG to WebP</option>
+            <option value="webp">JPG to WebP</option>
+            <option value="png">WebP to PNG</option>
+            <option value="tiff">JPG to TIFF</option>
+        </select>
+        <button onclick="convertSelectedFormat()">Convert</button>
+    </div>
+    <div class="output-image-container">
+        <label>Output Image:</label>
+        <div class="output-image" id="outputImageContainer"></div>
+    </div>
+    <button id="downloadButton" style="display: none;" onclick="download()">Download Converted Image</button>
+</div>
+
+<script>
+var dropArea = document.getElementById('dropArea');
+var imageInput = document.getElementById('imageInput');
+var formatSelect = document.getElementById('formatSelect');
+var conversionOptions = document.querySelector('.conversion-options');
+var downloadButton = document.getElementById('downloadButton');
+
+dropArea.addEventListener('dragenter', function(e) {
+    e.preventDefault();
+    dropArea.classList.add('highlight');
+});
+
+dropArea.addEventListener('dragleave', function() {
+    dropArea.classList.remove('highlight');
+});
+
+dropArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+});
+
+dropArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropArea.classList.remove('highlight');
+    var file = e.dataTransfer.files[0];
+    imageInput.files = e.dataTransfer.files;
+    handleFile(file);
+});
+
+imageInput.addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    handleFile(file);
+});
+
+function handleFile(file) {
+    if (file.type.startsWith('image/')) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                var outputImage = document.createElement('img');
+                outputImage.className = 'output-image';
+                outputImage.src = canvas.toDataURL();
+                var outputContainer = document.getElementById('outputImageContainer');
+                outputContainer.innerHTML = '';
+                outputContainer.appendChild(outputImage);
+                conversionOptions.style.display = 'block';
+                downloadButton.style.display = 'block';
+                downloadButton.dataset.downloadurl = ['image/png', outputImage.src, outputImage.src].join(':');
+                populateConversionOptions(file.type);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        alert('Please select an image file.');
+    }
+}
+
+function populateConversionOptions(imageType) {
+    var options = formatSelect.options;
+    for (var i = 0; i < options.length; i++) {
+        var optionValue = options[i].value;
+        if ((imageType === 'image/jpeg' && optionValue === 'png') ||
+            (imageType === 'image/png' && (optionValue === 'jpg' || optionValue === 'webp')) ||
+            (imageType === 'image/webp' && optionValue === 'png')) {
+            options[i].disabled = false;
+        } else {
+            options[i].disabled = true;
+        }
+    }
+}
+
+function convertSelectedFormat() {
+    var selectedFormat = formatSelect.value;
+    convertTo(selectedFormat);
+}
+
+function convertTo(format) {
+    var file = imageInput.files[0];
+    if (!file) {
+        alert('Please select an image.');
+        return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            var outputImage = document.createElement('img');
+            outputImage.className = 'output-image';
+            outputImage.src = canvas.toDataURL('image/' + format);
+            var outputContainer = document.getElementById('outputImageContainer');
+            outputContainer.innerHTML = '';
+            outputContainer.appendChild(outputImage);
+            downloadButton.style.display = 'block';
+            downloadButton.dataset.downloadurl = ['image/png', outputImage.src, outputImage.src].join(':');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function download() {
+    var link = document.createElement('a');
+    link.download = 'converted_image.png'; // You can change the filename here
+    link.href = downloadButton.dataset.downloadurl;
+    link.click();
+}
+</script>
+</body>
+</html>
