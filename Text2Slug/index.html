@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slug Generator</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 100px auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  input[type="text"] {
+    width: calc(100% - 80px);
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+
+  button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+
+  #outputSlug {
+    margin-top: 20px;
+    display: none; /* Initially hidden */
+    align-items: center;
+  }
+
+  #outputSlug p {
+    margin-right: 10px;
+  }
+
+  #copyStatus {
+    color: green;
+    font-size: 14px;
+    margin-top: 5px;
+    display: none; /* Initially hidden */
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Slug Generator</h1>
+    <input type="text" id="inputText" placeholder="Enter text...">
+    <button onclick="generateSlug()">Generate Slug</button>
+    <div id="outputSlug">
+      <p id="slugText"></p>
+      <button id="copyButton" onclick="copySlug()">Copy</button>
+      <span id="copyStatus">Copied!</span>
+    </div>
+  </div>
+  <script>
+    function generateSlug() {
+      var inputText = document.getElementById('inputText').value.trim().toLowerCase();
+      
+      // Ignore trailing question mark
+      if (inputText.endsWith('?')) {
+        inputText = inputText.slice(0, -1);
+      }
+      
+      var slug = inputText.replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+      document.getElementById('slugText').textContent = slug;
+
+      // Show the output and copy button
+      document.getElementById('outputSlug').style.display = 'flex';
+    }
+
+    function copySlug() {
+      var slugText = document.getElementById('slugText');
+      var range = document.createRange();
+      range.selectNode(slugText);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      document.execCommand('copy');
+      window.getSelection().removeAllRanges();
+      
+      // Show copy status message
+      var copyStatus = document.getElementById('copyStatus');
+      copyStatus.style.display = 'inline';
+      
+      // Hide copy status message after 2 seconds
+      setTimeout(function() {
+        copyStatus.style.display = 'none';
+      }, 2000);
+      
+      // Replace "Copy" button with "Copied" message
+      var copyButton = document.getElementById('copyButton');
+      copyButton.textContent = 'Copied!';
+      copyButton.disabled = true;
+    }
+  </script>
+</body>
+</html>
