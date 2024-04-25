@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Converter</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+h1 {
+    color: #333;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+input[type="text"], input[type="color"] {
+    width: 200px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+.color-box {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+}
+.color-info {
+    font-size: 16px;
+}
+</style>
+</head>
+<body>
+<h1>Color Converter</h1>
+<div class="container">
+    <input type="color" id="colorPicker" onchange="updateColor()">
+    <button onclick="convertColor()">Convert Color</button>
+    <div class="color-box" id="colorBox"></div>
+    <div class="color-info" id="colorInfo"></div>
+    <br>
+    <input type="text" id="hexInput" placeholder="Enter Hex color (e.g., #FF0000)">
+    <button onclick="convertHexToRGB()">Convert to RGB</button>
+    <div class="color-box" id="hexColorBox"></div>
+    <div class="color-info" id="hexColorInfo"></div>
+</div>
+
+<script>
+function updateColor() {
+    var colorPicker = document.getElementById('colorPicker');
+    var colorBox = document.getElementById('colorBox');
+    var hexInput = document.getElementById('hexInput');
+
+    var selectedColor = colorPicker.value;
+    colorBox.style.backgroundColor = selectedColor;
+
+    hexInput.value = selectedColor;
+}
+
+function convertColor() {
+    var colorValue = document.getElementById('colorPicker').value.trim();
+
+    if (!colorValue) {
+        alert('Please select a color.');
+        return;
+    }
+
+    var hexColor = colorValue;
+    var rgbString = hexToRgb(hexColor);
+
+    document.getElementById('colorBox').style.backgroundColor = hexColor;
+    document.getElementById('colorInfo').innerHTML = `<strong>RGB:</strong> ${rgbString}`;
+}
+
+function convertHexToRGB() {
+    var hexInput = document.getElementById('hexInput').value.trim();
+    var hexRegex = /^#?([0-9a-fA-F]{3}){1,2}$/;
+    
+    if (!hexRegex.test(hexInput)) {
+        alert('Invalid Hex format. Please enter a valid 3 or 6-digit hexadecimal color code (e.g., #FF0000 or FF0000).');
+        return;
+    }
+
+    var hexColor = hexInput.replace('#', '');
+    var red = parseInt(hexColor.substring(0, 2), 16);
+    var green = parseInt(hexColor.substring(2, 4), 16);
+    var blue = parseInt(hexColor.substring(4, 6), 16);
+
+    document.getElementById('hexColorBox').style.backgroundColor = `#${hexColor}`;
+    document.getElementById('hexColorInfo').innerHTML = `<strong>RGB:</strong> (${red}, ${green}, ${blue})`;
+}
+
+function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    var r = parseInt(hex.substring(0, 2), 16);
+    var g = parseInt(hex.substring(2, 4), 16);
+    var b = parseInt(hex.substring(4, 6), 16);
+    return `(${r}, ${g}, ${b})`;
+}
+</script>
+</body>
+</html>
